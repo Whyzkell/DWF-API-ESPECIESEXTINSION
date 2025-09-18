@@ -1,4 +1,4 @@
-package sv.edu.udb.api_especieextionsion.repository.domain;
+package sv.edu.udb.api_especieextionsion.domain;
 
 import jakarta.persistence.*;
 import lombok.*;

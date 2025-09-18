@@ -9,7 +9,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import sv.edu.udb.api_especieextionsion.controller.dto.*;
 import sv.edu.udb.api_especieextionsion.repository.EspecieRepository;
-import sv.edu.udb.api_especieextionsion.repository.domain.Especie;
+import sv.edu.udb.api_especieextionsion.domain.Especie;
 import sv.edu.udb.api_especieextionsion.service.EspecieService;
 
 import java.util.List;
