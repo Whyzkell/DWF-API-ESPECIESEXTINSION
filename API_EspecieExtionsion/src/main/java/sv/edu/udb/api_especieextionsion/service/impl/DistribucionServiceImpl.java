@@ -50,7 +50,7 @@ public class DistribucionServiceImpl implements DistribucionService {
         return distRepo.findByEspecieId(especieId).stream().map(this::toResponse).toList();
     }
 
-    // ---- mapeo manual ----
+    // mapeo manual
     private DistribucionResponse toResponse(DistribucionGeografica d) {
         return DistribucionResponse.builder()
                 .id(d.getId())
