@@ -66,4 +66,26 @@ public class EspecieAmenazaServiceImpl implements EspecieAmenazaService {
                 .severidad(l.getSeveridad())
                 .build();
     }
+
+    @Transactional
+    @Override
+    public EspecieAmenazaResponse actualizarSeveridad(Long especieId, Long amenazaId, String severidad) {
+        var link = linkRepo.findByEspecieIdAndAmenazaId(especieId, amenazaId)
+                .orElseThrow(() -> new EntityNotFoundException("La especie no tiene asociada esa amenaza"));
+        // validación simple
+        if (!severidad.matches("BAJA|MEDIA|ALTA")) {
+            throw new IllegalArgumentException("Severidad inválida (use BAJA, MEDIA o ALTA)");
+        }
+        link.setSeveridad(severidad);
+        link = linkRepo.save(link);
+        return toResponse(link);
+    }
+
+    @Transactional
+    @Override
+    public void desasociar(Long especieId, Long amenazaId) {
+        var link = linkRepo.findByEspecieIdAndAmenazaId(especieId, amenazaId)
+                .orElseThrow(() -> new EntityNotFoundException("La especie no tiene asociada esa amenaza"));
+        linkRepo.delete(link); // idempotente por recurso existente
+    }
 }
