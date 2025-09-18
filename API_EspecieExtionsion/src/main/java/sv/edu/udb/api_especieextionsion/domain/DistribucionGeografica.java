@@ -23,10 +23,10 @@ public class DistribucionGeografica {
     private String ecosistema;
 
     @Column(nullable = false)
-    private Double latitud;   // en dev usamos H2 con doubles
+    private Double latitud;
 
     @Column(nullable = false)
-    private Double longitud;  // (más adelante puedes migrar a PostGIS)
+    private Double longitud;
 
     private Integer precisionMetros;
 
