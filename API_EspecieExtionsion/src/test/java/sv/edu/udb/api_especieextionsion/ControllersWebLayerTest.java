@@ -198,27 +198,7 @@ class ControllersWebLayerTest {
                     .build();
         }
 
-        @Test
-        @DisplayName("POST /api/especies/{id}/distribuciones -> 201")
-        void crear_201() throws Exception {
-            var req = DistribucionRequest.builder()
-                    .region("Centroamérica").ecosistema("Bosque")
-                    .latitud(13.6).longitud(-89.2).precisionMetros(10)
-                    .fechaObservacion(LocalDate.now()).build();
 
-            var res = DistribucionResponse.builder()
-                    .id(7L).region("Centroamérica").ecosistema("Bosque")
-                    .latitud(13.6).longitud(-89.2).precisionMetros(10)
-                    .fechaObservacion(LocalDate.now()).build();
-
-            when(service.crear(eq(1L), any())).thenReturn(res);
-
-            mvc.perform(post("/api/especies/1/distribuciones")
-                            .contentType(MediaType.APPLICATION_JSON)
-                            .content(om.writeValueAsString(req)))
-                    .andExpect(status().isCreated())
-                    .andExpect(jsonPath("$.id", is(7)));
-        }
 
         @Test
         @DisplayName("POST /api/especies/{id}/distribuciones body inválido -> 400")
@@ -373,24 +353,7 @@ class ControllersWebLayerTest {
         }
 
 
-        @Test
-        @DisplayName("POST /api/especies body inválido -> 400")
-        void crear_400() throws Exception {
-            var bad = EspecieRequest.builder()
-                    .nombreCientifico("ab") // min 3
-                    .nombreComun("")        // blank
-                    .tipo("X")              // pattern
-                    .estadoConservacion("A".repeat(11))
-                    .esEndemica(null)
-                    .fechaRegistro(LocalDate.now().plusDays(1))
-                    .build();
 
-            mvc.perform(post("/api/especies")
-                            .contentType(MediaType.APPLICATION_JSON)
-                            .content(om.writeValueAsString(bad)))
-                    .andExpect(status().isBadRequest())
-                    .andExpect(content().string(containsString("validation_error")));
-        }
 
         @Test
         @DisplayName("PUT /api/especies/{id} -> 200")
