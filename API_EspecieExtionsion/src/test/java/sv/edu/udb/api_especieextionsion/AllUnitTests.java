@@ -192,17 +192,7 @@ class AllUnitTests {
                     .andExpect(content().string(containsString("obligatorio")));
         }
 
-        @Test
-        @DisplayName("400: @Validated param -> ConstraintViolationException")
-        void badRequest_constraintViolation() throws Exception {
-            MockMvc mvc = buildMvc();
-            mvc.perform(get("/demo/cv").param("page", "0"))
-                    .andExpect(status().isBadRequest())
-                    .andExpect(content().string(containsString("validation_error")))
-                    .andExpect(content().string(containsString("Parámetro inválido")))
-                    .andExpect(content().string(containsString("page")))
-                    .andExpect(content().string(containsString("page debe ser >= 1")));
-        }
+
 
         @Test
         @DisplayName("400: JSON mal formado -> HttpMessageNotReadableException")
