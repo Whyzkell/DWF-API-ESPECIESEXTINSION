@@ -1,4 +1,4 @@
-package sv.edu.udb.api_especieextionsion.controller.response;
+package sv.edu.udb.api_especieextionsion.controller;
 
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.media.*;
