@@ -12,6 +12,7 @@ import sv.edu.udb.api_especieextionsion.repository.EspecieRepository;
 import sv.edu.udb.api_especieextionsion.domain.Especie;
 import sv.edu.udb.api_especieextionsion.service.EspecieService;
 
+
 import java.util.List;
 
 @Service
@@ -24,7 +25,7 @@ public class EspecieServiceImpl implements EspecieService {
     public EspecieResponse crear(EspecieRequest r) {
         Especie e = mapToEntity(new Especie(), r);
         try {
-            e = repo.save(e);
+            e = repo.saveAndFlush(e);
         } catch (DataIntegrityViolationException ex) {
             throw new IllegalArgumentException("Ya existe una especie con ese nombre científico");
         }
@@ -34,10 +35,11 @@ public class EspecieServiceImpl implements EspecieService {
     @Transactional
     @Override
     public EspecieResponse actualizar(Long id, EspecieRequest r) {
-        Especie e = repo.findById(id).orElseThrow(() -> new EntityNotFoundException("Especie no encontrada"));
+        Especie e = repo.findById(id)
+                .orElseThrow(() -> new EntityNotFoundException("Especie no encontrada"));
         mapToEntity(e, r);
         try {
-            e = repo.save(e);
+            e = repo.saveAndFlush(e);
         } catch (DataIntegrityViolationException ex) {
             throw new IllegalArgumentException("Nombre científico ya en uso");
         }

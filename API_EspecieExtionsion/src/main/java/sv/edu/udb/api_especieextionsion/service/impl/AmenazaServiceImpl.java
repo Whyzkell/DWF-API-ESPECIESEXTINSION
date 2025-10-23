@@ -25,8 +25,9 @@ public class AmenazaServiceImpl implements AmenazaService{
                 .tipo(r.getTipo())
                 .descripcion(r.getDescripcion())
                 .build();
-        try { a = repo.save(a); }
-        catch (DataIntegrityViolationException e) {
+        try {
+            a = repo.saveAndFlush(a);
+        } catch (DataIntegrityViolationException e) {
             throw new IllegalArgumentException("El código de amenaza ya existe");
         }
         return toResponse(a);
@@ -48,12 +49,14 @@ public class AmenazaServiceImpl implements AmenazaService{
     @Transactional
     @Override
     public AmenazaResponse actualizar(Long id, AmenazaRequest r) {
-        Amenaza a = repo.findById(id).orElseThrow(() -> new EntityNotFoundException("Amenaza no encontrada"));
+        Amenaza a = repo.findById(id)
+                .orElseThrow(() -> new EntityNotFoundException("Amenaza no encontrada"));
         a.setCodigo(r.getCodigo());
         a.setTipo(r.getTipo());
         a.setDescripcion(r.getDescripcion());
-        try { a = repo.save(a); }
-        catch (DataIntegrityViolationException e) {
+        try {
+            a = repo.saveAndFlush(a);
+        } catch (DataIntegrityViolationException e) {
             throw new IllegalArgumentException("El código de amenaza ya existe");
         }
         return toResponse(a);
