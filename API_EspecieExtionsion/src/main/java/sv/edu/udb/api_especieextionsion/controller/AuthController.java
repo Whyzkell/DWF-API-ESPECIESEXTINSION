@@ -33,5 +33,19 @@ public class AuthController {
     }
 
 
+    @PostMapping("/register")
+    public ResponseEntity<?> register(@RequestBody RegisterRequest r){
+        if (usuarioRepo.existsByUsername(r.getUsername())) return ResponseEntity.status(409).body("Username ya existe");
+        Usuario u = Usuario.builder()
+                .username(r.getUsername())
+                .password(passwordEncoder.encode(r.getPassword()))
+                .nombreCompleto(r.getNombreCompleto())
+                .email(r.getEmail())
+                .rol(r.getRol())
+                .activo(true)
+                .fechaRegistro(java.time.LocalDate.now())
+                .build();
+        return ResponseEntity.ok(usuarioRepo.save(u));
+    }
 }
 
