@@ -5,8 +5,10 @@ import jakarta.validation.ConstraintViolationException;
 import jakarta.validation.ValidationException;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.ProblemDetail;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.converter.HttpMessageNotReadableException;
+import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
@@ -100,5 +102,14 @@ public class GlobalExceptionHandler {
                 .build());
         return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(w);
     }
+
+    @ExceptionHandler(BadCredentialsException.class)
+    ProblemDetail handleBadCred(BadCredentialsException ex) {
+        ProblemDetail pd = ProblemDetail.forStatus(HttpStatus.UNAUTHORIZED);
+        pd.setTitle("Credenciales inválidas");
+        pd.setDetail("Usuario o contraseña incorrectos.");
+        return pd;
+    }
+
 }
 

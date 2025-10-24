@@ -8,6 +8,7 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Service;
 
+import java.nio.charset.StandardCharsets;
 import java.security.Key;
 import java.util.*;
 
@@ -66,7 +67,7 @@ public class JwtService {
     }
 
     private Key signingKey() {
-        byte[] keyBytes = Decoders.BASE64.decode(secretKeyBase64);
+        byte[] keyBytes = secretKeyBase64.getBytes(StandardCharsets.UTF_8); 
         return Keys.hmacShaKeyFor(keyBytes);
     }
 }
