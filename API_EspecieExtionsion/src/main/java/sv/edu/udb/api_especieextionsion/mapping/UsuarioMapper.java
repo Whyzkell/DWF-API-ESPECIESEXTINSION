@@ -5,31 +5,27 @@ import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
 import org.mapstruct.MappingTarget;
 import org.mapstruct.NullValuePropertyMappingStrategy;
-
 import sv.edu.udb.api_especieextionsion.controller.dto.UsuarioRequest;
 import sv.edu.udb.api_especieextionsion.controller.dto.UsuarioResponse;
 import sv.edu.udb.api_especieextionsion.repository.domain.Usuario;
 
-@Mapper(config = MapperConfig.class)
+@Mapper(config = MapstructConfig.class)
 public interface UsuarioMapper {
 
-    // Request -> Entity (id lo genera la DB). Password se maneja aparte (service / register).
+    // Request -> Entity (id lo genera la DB). Password se maneja aparte (registro/cambio de clave).
     @Mapping(target = "id", ignore = true)
-    @Mapping(target = "password", ignore = true) // <-- importante
+    @Mapping(target = "password", ignore = true) // quítala si tu entidad NO tiene password
     Usuario toEntity(UsuarioRequest dto);
 
-    // Entity -> Response (no expone password, así que no hay nada que hacer)
+    // Entity -> Response
     UsuarioResponse toDto(Usuario entity);
 
-    // Update parcial sobre la entidad, ignorando nulls. Password no se toca aquí.
+    // Update parcial: ignora nulls, nunca toca id ni password
     @BeanMapping(nullValuePropertyMappingStrategy = NullValuePropertyMappingStrategy.IGNORE)
     @Mapping(target = "id", ignore = true)
-    @Mapping(target = "password", ignore = true) // <-- importante
+    @Mapping(target = "password", ignore = true) // quítala si tu entidad NO tiene password
     void updateEntity(@MappingTarget Usuario entity, UsuarioRequest dto);
 }
-
-
-
 
 
 
