@@ -1,4 +1,4 @@
-package sv.edu.udb.api_especieextionsion.domain;
+package sv.edu.udb.api_especieextionsion.repository.domain;
 
 import io.swagger.v3.oas.annotations.media.Schema;
 

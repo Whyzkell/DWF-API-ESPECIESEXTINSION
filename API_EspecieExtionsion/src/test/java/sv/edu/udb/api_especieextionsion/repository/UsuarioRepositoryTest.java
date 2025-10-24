@@ -7,8 +7,8 @@ import org.springframework.boot.test.autoconfigure.jdbc.AutoConfigureTestDatabas
 import org.springframework.boot.test.autoconfigure.orm.jpa.DataJpaTest;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.test.context.ActiveProfiles;
-import sv.edu.udb.api_especieextionsion.domain.Rol;
-import sv.edu.udb.api_especieextionsion.domain.Usuario;
+import sv.edu.udb.api_especieextionsion.repository.domain.Rol;
+import sv.edu.udb.api_especieextionsion.repository.domain.Usuario;
 
 import java.time.LocalDate;
 import java.util.Optional;

@@ -8,9 +8,9 @@ import org.springframework.boot.test.autoconfigure.orm.jpa.DataJpaTest;
 import org.springframework.boot.test.autoconfigure.orm.jpa.TestEntityManager;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.test.context.ActiveProfiles;
-import sv.edu.udb.api_especieextionsion.domain.Amenaza;
-import sv.edu.udb.api_especieextionsion.domain.Especie;
-import sv.edu.udb.api_especieextionsion.domain.EspecieAmenaza;
+import sv.edu.udb.api_especieextionsion.repository.domain.Amenaza;
+import sv.edu.udb.api_especieextionsion.repository.domain.Especie;
+import sv.edu.udb.api_especieextionsion.repository.domain.EspecieAmenaza;
 
 import java.time.LocalDate;
 import java.util.List;
