@@ -12,7 +12,7 @@ import org.springframework.context.annotation.Import;
 import org.springframework.test.context.TestPropertySource;
 import sv.edu.udb.api_especieextionsion.controller.dto.AmenazaRequest;
 import sv.edu.udb.api_especieextionsion.controller.dto.AmenazaResponse;
-import sv.edu.udb.api_especieextionsion.domain.Amenaza;
+import sv.edu.udb.api_especieextionsion.repository.domain.Amenaza;
 import sv.edu.udb.api_especieextionsion.repository.AmenazaRepository;
 import sv.edu.udb.api_especieextionsion.service.impl.AmenazaServiceImpl;
 

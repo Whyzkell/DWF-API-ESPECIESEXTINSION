@@ -11,7 +11,7 @@ import org.springframework.context.annotation.Import;
 import org.springframework.test.context.TestPropertySource;
 import sv.edu.udb.api_especieextionsion.controller.dto.EspecieRequest;
 import sv.edu.udb.api_especieextionsion.controller.dto.EspecieResponse;
-import sv.edu.udb.api_especieextionsion.domain.Especie;
+import sv.edu.udb.api_especieextionsion.repository.domain.Especie;
 import sv.edu.udb.api_especieextionsion.repository.EspecieRepository;
 import sv.edu.udb.api_especieextionsion.service.impl.EspecieServiceImpl;
 

@@ -12,8 +12,8 @@ import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.test.context.TestPropertySource;
 import sv.edu.udb.api_especieextionsion.controller.dto.UsuarioRequest;
 import sv.edu.udb.api_especieextionsion.controller.dto.UsuarioResponse;
-import sv.edu.udb.api_especieextionsion.domain.Rol;
-import sv.edu.udb.api_especieextionsion.domain.Usuario;
+import sv.edu.udb.api_especieextionsion.repository.domain.Rol;
+import sv.edu.udb.api_especieextionsion.repository.domain.Usuario;
 import sv.edu.udb.api_especieextionsion.repository.UsuarioRepository;
 import sv.edu.udb.api_especieextionsion.service.impl.UsuarioServiceImpl;
 

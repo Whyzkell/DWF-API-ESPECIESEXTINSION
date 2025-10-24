@@ -12,7 +12,7 @@ import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.test.context.TestPropertySource;
 import sv.edu.udb.api_especieextionsion.controller.dto.FuenteRequest;
 import sv.edu.udb.api_especieextionsion.controller.dto.FuenteResponse;
-import sv.edu.udb.api_especieextionsion.domain.Fuente;
+import sv.edu.udb.api_especieextionsion.repository.domain.Fuente;
 import sv.edu.udb.api_especieextionsion.repository.FuenteRepository;
 import sv.edu.udb.api_especieextionsion.service.impl.FuenteServiceImpl;
 

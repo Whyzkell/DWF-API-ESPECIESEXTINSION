@@ -3,7 +3,7 @@ package sv.edu.udb.api_especieextionsion.controller.dto;
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.*;
 import lombok.*;
-import sv.edu.udb.api_especieextionsion.domain.Rol;
+import sv.edu.udb.api_especieextionsion.repository.domain.Rol;
 
 import java.time.LocalDate;
 
