@@ -79,11 +79,11 @@
         </dependency>
 
         <!-- Test -->
-        <dependency>
+        <!--<dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-test</artifactId>
             <scope>test</scope>
-            <!-- deja estas exclusiones si realmente no usas Mockito -->
+
             <exclusions>
                 <exclusion>
                     <groupId>org.mockito</groupId>
@@ -94,7 +94,7 @@
                     <artifactId>mockito-junit-jupiter</artifactId>
                 </exclusion>
             </exclusions>
-        </dependency>
+        </dependency>-->
         <!-- JWT (jjwt 0.11.x) -->
         <dependency>
             <groupId>io.jsonwebtoken</groupId>
@@ -124,6 +124,11 @@
             <groupId>org.testcontainers</groupId>
             <artifactId>postgresql</artifactId>
             <version>${testcontainers.version}</version>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-test</artifactId>
             <scope>test</scope>
         </dependency>
     </dependencies>
