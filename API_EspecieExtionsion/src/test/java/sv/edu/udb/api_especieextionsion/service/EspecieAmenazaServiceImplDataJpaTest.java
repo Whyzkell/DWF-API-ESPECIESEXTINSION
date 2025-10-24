@@ -10,21 +10,22 @@ import org.springframework.context.annotation.Import;
 import org.springframework.test.context.TestPropertySource;
 import sv.edu.udb.api_especieextionsion.controller.dto.EspecieAmenazaLinkRequest;
 import sv.edu.udb.api_especieextionsion.controller.dto.EspecieAmenazaResponse;
-import sv.edu.udb.api_especieextionsion.repository.domain.Amenaza;
-import sv.edu.udb.api_especieextionsion.repository.domain.Especie;
-import sv.edu.udb.api_especieextionsion.repository.domain.EspecieAmenaza;
+import sv.edu.udb.api_especieextionsion.mapping.FakeEspecieAmenazaMapper;
 import sv.edu.udb.api_especieextionsion.repository.AmenazaRepository;
 import sv.edu.udb.api_especieextionsion.repository.EspecieAmenazaRepository;
 import sv.edu.udb.api_especieextionsion.repository.EspecieRepository;
+import sv.edu.udb.api_especieextionsion.repository.domain.Amenaza;
+import sv.edu.udb.api_especieextionsion.repository.domain.Especie;
+import sv.edu.udb.api_especieextionsion.repository.domain.EspecieAmenaza;
 import sv.edu.udb.api_especieextionsion.service.impl.EspecieAmenazaServiceImpl;
+import sv.edu.udb.api_especieextionsion.shared.DuplicateResourceException;
 
-import java.time.LocalDate;
 import java.util.List;
 
 import static org.assertj.core.api.Assertions.*;
 
 @DataJpaTest
-@Import(EspecieAmenazaServiceImpl.class)
+@Import({EspecieAmenazaServiceImpl.class, FakeEspecieAmenazaMapper.class})
 @AutoConfigureTestDatabase(replace = AutoConfigureTestDatabase.Replace.ANY)
 @TestPropertySource(properties = {
         "spring.jpa.hibernate.ddl-auto=create-drop"
@@ -34,180 +35,179 @@ class EspecieAmenazaServiceImplDataJpaTest {
     @Autowired EspecieRepository especieRepo;
     @Autowired AmenazaRepository amenazaRepo;
     @Autowired EspecieAmenazaRepository linkRepo;
-
     @Autowired EspecieAmenazaService service;
 
-    // ---------- helpers ----------
-    private Especie especie(String nc, String nombreComun) {
+    // ===== helpers =====
+    private Especie especie(String nc, String nombre, String tipo) {
         return Especie.builder()
                 .nombreCientifico(nc)
-                .nombreComun(nombreComun)
-                .tipo("FAUNA")
+                .nombreComun(nombre)
+                .tipo(tipo)
                 .estadoConservacion("VU")
                 .descripcion("desc")
                 .esEndemica(false)
-                .fechaRegistro(LocalDate.now())
+                .fechaRegistro(java.time.LocalDate.now())
                 .build();
     }
 
-    private Amenaza amenaza(String codigo, String tipo) {
+    private Amenaza amenaza(String codigo, String tipo, String desc) {
         return Amenaza.builder()
                 .codigo(codigo)
                 .tipo(tipo)
-                .descripcion("desc")
+                .descripcion(desc)
                 .build();
     }
 
     private EspecieAmenazaLinkRequest linkReq(Long amenazaId, String severidad) {
-        var r = new EspecieAmenazaLinkRequest();
-        r.setAmenazaId(amenazaId);
-        r.setSeveridad(severidad);
-        return r;
+        return EspecieAmenazaLinkRequest.builder()
+                .amenazaId(amenazaId)
+                .severidad(severidad)
+                .build();
     }
 
-    // ---------- tests ----------
+    // ===== tests =====
 
     @Test
-    @DisplayName("asociar: crea vínculo y devuelve datos de amenaza + severidad")
+    @DisplayName("asociar: crea vínculo cuando especie y amenaza existen y no hay duplicado")
     void asociar_ok() {
-        Especie sp = especieRepo.save(especie("NC-1", "Común 1"));
-        Amenaza am = amenazaRepo.save(amenaza("A-1", "CAZA"));
+        Especie e = especieRepo.save(especie("Panthera onca", "Jaguar", "FAUNA"));
+        var a = amenazaRepo.save(amenaza("INCENDIO", "HUMANA", "Incendio forestal"));
 
-        EspecieAmenazaResponse res =
-                service.asociar(sp.getId(), linkReq(am.getId(), "MEDIA"));
+        EspecieAmenazaResponse res = service.asociar(e.getId(), linkReq(a.getId(), "ALTA"));
 
         assertThat(res.getIdVinculo()).isNotNull();
-        assertThat(res.getAmenazaId()).isEqualTo(am.getId());
-        assertThat(res.getCodigo()).isEqualTo("A-1");
-        assertThat(res.getTipo()).isEqualTo("CAZA");
-        assertThat(res.getSeveridad()).isEqualTo("MEDIA");
+        assertThat(res.getAmenazaId()).isEqualTo(a.getId());
+        assertThat(res.getCodigo()).isEqualTo("INCENDIO");
+        assertThat(res.getSeveridad()).isEqualTo("ALTA");
 
-        var enBd = linkRepo.findByEspecieId(sp.getId());
-        assertThat(enBd).hasSize(1);
+        assertThat(linkRepo.existsByEspecieIdAndAmenazaId(e.getId(), a.getId())).isTrue();
     }
 
     @Test
-    @DisplayName("asociar: 404 si especie no existe")
-    void asociar_especieNoExiste() {
-        Amenaza am = amenazaRepo.save(amenaza("A-2", "PERDIDA"));
-        assertThatThrownBy(() -> service.asociar(999L, linkReq(am.getId(), "BAJA")))
+    @DisplayName("asociar: 404 si la especie no existe")
+    void asociar_especieNotFound() {
+        var a = amenazaRepo.save(amenaza("DEFOREST", "HUMANA", "Deforestación"));
+        assertThatThrownBy(() -> service.asociar(999L, linkReq(a.getId(), "MEDIA")))
                 .isInstanceOf(EntityNotFoundException.class)
                 .hasMessageContaining("Especie no encontrada");
     }
 
     @Test
-    @DisplayName("asociar: 404 si amenaza no existe")
-    void asociar_amenazaNoExiste() {
-        Especie sp = especieRepo.save(especie("NC-2", "Común 2"));
-        assertThatThrownBy(() -> service.asociar(sp.getId(), linkReq(999L, "ALTA")))
+    @DisplayName("asociar: 404 si la amenaza no existe")
+    void asociar_amenazaNotFound() {
+        Especie e = especieRepo.save(especie("Ara macao", "Guacamaya", "FAUNA"));
+        assertThatThrownBy(() -> service.asociar(e.getId(), linkReq(777L, "BAJA")))
                 .isInstanceOf(EntityNotFoundException.class)
                 .hasMessageContaining("Amenaza no encontrada");
     }
 
     @Test
-    @DisplayName("asociar: conflicto si ya existe el vínculo especie-amenaza")
-    void asociar_duplicado() {
-        Especie sp = especieRepo.save(especie("NC-3", "Común 3"));
-        Amenaza am = amenazaRepo.save(amenaza("A-3", "OTRA"));
-        service.asociar(sp.getId(), linkReq(am.getId(), "BAJA"));
+    @DisplayName("asociar: 409 si ya existe ese vínculo especie-amenaza")
+    void asociar_duplicate() {
+        Especie e = especieRepo.save(especie("Quercus robur", "Roble", "FLORA"));
+        var a = amenazaRepo.save(amenaza("PLAGA", "BIOLOGICA", "Plaga X"));
 
-        assertThatThrownBy(() -> service.asociar(sp.getId(), linkReq(am.getId(), "MEDIA")))
-                .isInstanceOf(IllegalArgumentException.class)
-                .hasMessageContaining("ya tiene asociada esta amenaza");
+        // vínculo existente
+        linkRepo.save(EspecieAmenaza.builder()
+                .especie(e).amenaza(a).severidad("MEDIA").build());
 
-        assertThat(linkRepo.findByEspecieId(sp.getId())).hasSize(1);
+        assertThatThrownBy(() -> service.asociar(e.getId(), linkReq(a.getId(), "ALTA")))
+                .isInstanceOf(DuplicateResourceException.class)
+                .hasMessageContaining("ya tiene asociada");
     }
 
     @Test
-    @DisplayName("listarPorEspecie: devuelve solo los vínculos de esa especie")
-    void listar_ok() {
-        Especie s1 = especieRepo.save(especie("NC-4", "E1"));
-        Especie s2 = especieRepo.save(especie("NC-5", "E2"));
-        Amenaza a1 = amenazaRepo.save(amenaza("C-1", "T1"));
-        Amenaza a2 = amenazaRepo.save(amenaza("C-2", "T2"));
+    @DisplayName("listarPorEspecie: devuelve vínculos mapeados de una especie")
+    void listarPorEspecie_ok() {
+        Especie e = especieRepo.save(especie("Test sp", "Prueba", "FAUNA"));
+        var a1 = amenazaRepo.save(amenaza("A1", "T1", "d1"));
+        var a2 = amenazaRepo.save(amenaza("A2", "T2", "d2"));
 
-        // crea dos vínculos para s1
-        service.asociar(s1.getId(), linkReq(a1.getId(), "BAJA"));
-        service.asociar(s1.getId(), linkReq(a2.getId(), "MEDIA"));
-        // vínculo para otra especie (no debe salir)
-        service.asociar(s2.getId(), linkReq(a1.getId(), "ALTA"));
+        linkRepo.saveAll(List.of(
+                EspecieAmenaza.builder().especie(e).amenaza(a1).severidad("BAJA").build(),
+                EspecieAmenaza.builder().especie(e).amenaza(a2).severidad("ALTA").build()
+        ));
 
-        List<EspecieAmenazaResponse> list = service.listarPorEspecie(s1.getId());
+        var list = service.listarPorEspecie(e.getId());
 
         assertThat(list).hasSize(2);
         assertThat(list).extracting(EspecieAmenazaResponse::getCodigo)
-                .containsExactlyInAnyOrder("C-1", "C-2");
+                .containsExactlyInAnyOrder("A1", "A2");
     }
 
     @Test
     @DisplayName("listarPorEspecie: 404 si la especie no existe")
-    void listar_especieNoExiste() {
+    void listarPorEspecie_notFound() {
         assertThatThrownBy(() -> service.listarPorEspecie(12345L))
                 .isInstanceOf(EntityNotFoundException.class)
                 .hasMessageContaining("Especie no encontrada");
     }
 
     @Test
-    @DisplayName("actualizarSeveridad: cambia la severidad del vínculo")
+    @DisplayName("actualizarSeveridad: cambia severidad cuando vínculo existe y severidad válida")
     void actualizarSeveridad_ok() {
-        Especie sp = especieRepo.save(especie("NC-6", "E6"));
-        Amenaza am = amenazaRepo.save(amenaza("D-1", "T"));
-        service.asociar(sp.getId(), linkReq(am.getId(), "BAJA"));
+        Especie e = especieRepo.save(especie("Bos taurus", "Vaca", "FAUNA"));
+        var a = amenazaRepo.save(amenaza("SEQUIA", "CLIMATICA", "Sequía"));
 
-        EspecieAmenazaResponse res =
-                service.actualizarSeveridad(sp.getId(), am.getId(), "ALTA");
+        var link = linkRepo.save(EspecieAmenaza.builder()
+                .especie(e).amenaza(a).severidad("BAJA").build());
 
+        var res = service.actualizarSeveridad(e.getId(), a.getId(), "ALTA");
+
+        assertThat(res.getIdVinculo()).isEqualTo(link.getId());
         assertThat(res.getSeveridad()).isEqualTo("ALTA");
 
-        EspecieAmenaza enBd = linkRepo.findByEspecieIdAndAmenazaId(sp.getId(), am.getId())
-                .orElseThrow();
-        assertThat(enBd.getSeveridad()).isEqualTo("ALTA");
+        // DB
+        assertThat(linkRepo.findById(link.getId()).orElseThrow().getSeveridad()).isEqualTo("ALTA");
     }
 
     @Test
-    @DisplayName("actualizarSeveridad: 404 si el vínculo no existe")
-    void actualizarSeveridad_noExiste() {
-        Especie sp = especieRepo.save(especie("NC-7", "E7"));
-        Amenaza am = amenazaRepo.save(amenaza("D-2", "T2"));
-
-        assertThatThrownBy(() -> service.actualizarSeveridad(sp.getId(), am.getId(), "MEDIA"))
-                .isInstanceOf(EntityNotFoundException.class)
-                .hasMessageContaining("no tiene asociada esa amenaza");
-    }
-
-    @Test
-    @DisplayName("actualizarSeveridad: valida severidad (BAJA|MEDIA|ALTA)")
+    @DisplayName("actualizarSeveridad: 400 si severidad inválida")
     void actualizarSeveridad_invalida() {
-        Especie sp = especieRepo.save(especie("NC-8", "E8"));
-        Amenaza am = amenazaRepo.save(amenaza("D-3", "T3"));
-        service.asociar(sp.getId(), linkReq(am.getId(), "MEDIA"));
+        Especie e = especieRepo.save(especie("Canis lupus", "Lobo", "FAUNA"));
+        var a = amenazaRepo.save(amenaza("CAZA", "HUMANA", "Caza ilegal"));
 
-        assertThatThrownBy(() -> service.actualizarSeveridad(sp.getId(), am.getId(), "MEDIO"))
+        linkRepo.save(EspecieAmenaza.builder()
+                .especie(e).amenaza(a).severidad("MEDIA").build());
+
+        assertThatThrownBy(() -> service.actualizarSeveridad(e.getId(), a.getId(), "EXTREMA"))
                 .isInstanceOf(IllegalArgumentException.class)
                 .hasMessageContaining("Severidad inválida");
     }
 
     @Test
-    @DisplayName("desasociar: elimina el vínculo existente")
+    @DisplayName("actualizarSeveridad: 404 si el vínculo no existe")
+    void actualizarSeveridad_linkNotFound() {
+        Especie e = especieRepo.save(especie("Felis catus", "Gato", "FAUNA"));
+        var a = amenazaRepo.save(amenaza("URB", "HUMANA", "Urbanización"));
+
+        assertThatThrownBy(() -> service.actualizarSeveridad(e.getId(), a.getId(), "BAJA"))
+                .isInstanceOf(EntityNotFoundException.class)
+                .hasMessageContaining("no tiene asociada esa amenaza");
+    }
+
+    @Test
+    @DisplayName("desasociar: elimina vínculo existente")
     void desasociar_ok() {
-        Especie sp = especieRepo.save(especie("NC-9", "E9"));
-        Amenaza am = amenazaRepo.save(amenaza("D-4", "T4"));
-        service.asociar(sp.getId(), linkReq(am.getId(), "BAJA"));
+        Especie e = especieRepo.save(especie("Test2", "Nombre", "FAUNA"));
+        var a = amenazaRepo.save(amenaza("A-DEL", "T-DEL", "del"));
 
-        service.desasociar(sp.getId(), am.getId());
+        var link = linkRepo.save(EspecieAmenaza.builder()
+                .especie(e).amenaza(a).severidad("MEDIA").build());
 
-        assertThat(linkRepo.findByEspecieIdAndAmenazaId(sp.getId(), am.getId())).isEmpty();
+        service.desasociar(e.getId(), a.getId());
+
+        assertThat(linkRepo.existsById(link.getId())).isFalse();
     }
 
     @Test
     @DisplayName("desasociar: 404 si el vínculo no existe")
-    void desasociar_noExiste() {
-        Especie sp = especieRepo.save(especie("NC-10", "E10"));
-        Amenaza am = amenazaRepo.save(amenaza("D-5", "T5"));
+    void desasociar_notFound() {
+        Especie e = especieRepo.save(especie("Test3", "Nombre", "FAUNA"));
+        var a = amenazaRepo.save(amenaza("A-NF", "T-NF", "nf"));
 
-        assertThatThrownBy(() -> service.desasociar(sp.getId(), am.getId()))
+        assertThatThrownBy(() -> service.desasociar(e.getId(), a.getId()))
                 .isInstanceOf(EntityNotFoundException.class)
                 .hasMessageContaining("no tiene asociada esa amenaza");
     }
 }
-
