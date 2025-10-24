@@ -33,4 +33,7 @@ public class Usuario {
 
     @Column(nullable = false)
     private LocalDate fechaRegistro;
+
+    @Column(nullable = false, length = 255)
+    private String password;  // BCrypt ~60 chars pero dejamos 255 por buenas prácticas
 }

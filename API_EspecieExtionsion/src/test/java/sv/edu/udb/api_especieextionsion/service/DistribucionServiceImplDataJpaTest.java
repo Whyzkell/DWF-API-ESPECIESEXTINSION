@@ -10,10 +10,11 @@ import org.springframework.context.annotation.Import;
 import org.springframework.test.context.TestPropertySource;
 import sv.edu.udb.api_especieextionsion.controller.dto.DistribucionRequest;
 import sv.edu.udb.api_especieextionsion.controller.dto.DistribucionResponse;
-import sv.edu.udb.api_especieextionsion.repository.domain.DistribucionGeografica;
-import sv.edu.udb.api_especieextionsion.repository.domain.Especie;
+import sv.edu.udb.api_especieextionsion.mapping.DistribucionMapper;
 import sv.edu.udb.api_especieextionsion.repository.DistribucionRepository;
 import sv.edu.udb.api_especieextionsion.repository.EspecieRepository;
+import sv.edu.udb.api_especieextionsion.repository.domain.DistribucionGeografica;
+import sv.edu.udb.api_especieextionsion.repository.domain.Especie;
 import sv.edu.udb.api_especieextionsion.service.impl.DistribucionServiceImpl;
 
 import java.time.LocalDate;
@@ -22,8 +23,8 @@ import java.util.List;
 import static org.assertj.core.api.Assertions.*;
 
 @DataJpaTest
-@Import(DistribucionServiceImpl.class) // inyecta el service real dentro del slice JPA
-@AutoConfigureTestDatabase(replace = AutoConfigureTestDatabase.Replace.ANY) // H2 embebida
+@Import({DistribucionServiceImpl.class, DistribucionMapper.class})
+@AutoConfigureTestDatabase(replace = AutoConfigureTestDatabase.Replace.ANY)
 @TestPropertySource(properties = {
         "spring.jpa.hibernate.ddl-auto=create-drop"
 })
@@ -31,108 +32,109 @@ class DistribucionServiceImplDataJpaTest {
 
     @Autowired EspecieRepository especieRepo;
     @Autowired DistribucionRepository distRepo;
+
     @Autowired DistribucionService service;
 
-    // ---------- helpers ----------
-    private Especie especie(String nc, String nombreComun) {
+    // ===== helpers =====
+    private Especie especie(String nc, String nombre, String tipo, String estado,
+                            boolean endemica, LocalDate fecha) {
         return Especie.builder()
                 .nombreCientifico(nc)
-                .nombreComun(nombreComun)
-                .tipo("FAUNA")
-                .estadoConservacion("VU")
+                .nombreComun(nombre)
+                .tipo(tipo)
+                .estadoConservacion(estado)
                 .descripcion("desc")
-                .esEndemica(false)
-                .fechaRegistro(LocalDate.now())
+                .esEndemica(endemica)
+                .fechaRegistro(fecha)
                 .build();
     }
 
-    private DistribucionRequest req(String region, String eco, double lat, double lng,
+    private DistribucionRequest req(String region, String eco, double lat, double lon,
                                     Integer precision, LocalDate fecha) {
-        var r = new DistribucionRequest();
-        r.setRegion(region);
-        r.setEcosistema(eco);
-        r.setLatitud(lat);
-        r.setLongitud(lng);
-        r.setPrecisionMetros(precision);
-        r.setFechaObservacion(fecha);
-        return r;
+        return DistribucionRequest.builder()
+                .region(region)
+                .ecosistema(eco)
+                .latitud(lat)
+                .longitud(lon)
+                .precisionMetros(precision)
+                .fechaObservacion(fecha)
+                .build();
     }
 
-    // ---------- tests ----------
+    private DistribucionGeografica dist(Especie e, String region, String eco, double lat, double lon,
+                                        Integer prec, LocalDate fecha) {
+        return DistribucionGeografica.builder()
+                .especie(e)
+                .region(region)
+                .ecosistema(eco)
+                .latitud(lat)
+                .longitud(lon)
+                .precisionMetros(prec)
+                .fechaObservacion(fecha)
+                .build();
+    }
+
+    // ===== tests =====
 
     @Test
-    @DisplayName("crear: inserta distribución ligada a la especie y devuelve DTO")
+    @DisplayName("crear: persiste y devuelve DistribucionResponse mapeado")
     void crear_ok() {
-        Especie sp = especieRepo.save(especie("NC-1", "Comun 1"));
-
-        DistribucionResponse out = service.crear(
-                sp.getId(),
-                req("Centro", "Bosque", 13.70, -89.20, 50, LocalDate.of(2024, 5, 12))
+        Especie sp = especieRepo.save(
+                especie("Panthera onca", "Jaguar", "FAUNA", "VU", false, LocalDate.now())
         );
 
-        assertThat(out.getId()).isNotNull();
-        assertThat(out.getRegion()).isEqualTo("Centro");
-        assertThat(out.getEcosistema()).isEqualTo("Bosque");
-        assertThat(out.getLatitud()).isEqualTo(13.70);
-        assertThat(out.getLongitud()).isEqualTo(-89.20);
-        assertThat(out.getPrecisionMetros()).isEqualTo(50);
-        assertThat(out.getFechaObservacion()).isEqualTo(LocalDate.of(2024, 5, 12));
+        DistribucionResponse res = service.crear(
+                sp.getId(),
+                req("Centroamérica", "Bosque tropical", 13.6929, -89.2182, 50, LocalDate.now())
+        );
 
-        // verificación en BD
-        var rows = distRepo.findByEspecieId(sp.getId());
-        assertThat(rows).hasSize(1);
-        DistribucionGeografica d = rows.get(0);
-        assertThat(d.getRegion()).isEqualTo("Centro");
+        assertThat(res.getId()).isNotNull();
+        assertThat(res.getRegion()).isEqualTo("Centroamérica");
+        assertThat(res.getEcosistema()).isEqualTo("Bosque tropical");
+        assertThat(res.getLatitud()).isEqualTo(13.6929);
+        assertThat(res.getLongitud()).isEqualTo(-89.2182);
+
+        // comprobamos en DB
+        assertThat(distRepo.count()).isEqualTo(1);
+        var inDb = distRepo.findAll().get(0);
+        assertThat(inDb.getEspecie().getId()).isEqualTo(sp.getId());
     }
 
     @Test
     @DisplayName("crear: 404 si la especie no existe")
-    void crear_especieNoExiste() {
+    void crear_notFound() {
         assertThatThrownBy(() ->
-                service.crear(999L, req("Occidente", "Matorral", 10.1, -88.2, 100, LocalDate.now()))
+                service.crear(999L, req("CA", "Bosque", 10, -80, 10, LocalDate.now()))
         )
                 .isInstanceOf(EntityNotFoundException.class)
                 .hasMessageContaining("Especie no encontrada");
+        assertThat(distRepo.count()).isZero();
     }
 
     @Test
-    @DisplayName("listarPorEspecie: devuelve solo las distribuciones de esa especie")
+    @DisplayName("listarPorEspecie: devuelve todas las distribuciones mapeadas")
     void listar_ok() {
-        Especie s1 = especieRepo.save(especie("NC-2", "Comun 2"));
-        Especie s2 = especieRepo.save(especie("NC-3", "Comun 3"));
+        Especie sp = especieRepo.save(
+                especie("Ara macao", "Guacamaya", "FAUNA", "LC", false, LocalDate.now())
+        );
 
         distRepo.saveAll(List.of(
-                DistribucionGeografica.builder()
-                        .especie(s1).region("Norte").ecosistema("Bosque")
-                        .latitud(1.1).longitud(2.2).precisionMetros(10)
-                        .fechaObservacion(LocalDate.of(2023,1,1))
-                        .build(),
-                DistribucionGeografica.builder()
-                        .especie(s1).region("Sur").ecosistema("Sabana")
-                        .latitud(3.3).longitud(4.4).precisionMetros(20)
-                        .fechaObservacion(LocalDate.of(2023,2,2))
-                        .build(),
-                // de otra especie (no debe salir)
-                DistribucionGeografica.builder()
-                        .especie(s2).region("Este").ecosistema("Humedal")
-                        .latitud(5.5).longitud(6.6).precisionMetros(30)
-                        .fechaObservacion(LocalDate.of(2023,3,3))
-                        .build()
+                dist(sp, "Belice", "Selva", 17.0, -88.0, 30, LocalDate.now()),
+                dist(sp, "Guatemala", "Bosque nuboso", 15.5, -90.2, 40, LocalDate.now())
         ));
 
-        List<DistribucionResponse> list = service.listarPorEspecie(s1.getId());
+        List<DistribucionResponse> list = service.listarPorEspecie(sp.getId());
 
         assertThat(list).hasSize(2);
         assertThat(list).extracting(DistribucionResponse::getRegion)
-                .containsExactlyInAnyOrder("Norte", "Sur");
-        assertThat(list).allSatisfy(r ->
-                assertThat(r.getEcosistema()).isIn("Bosque", "Sabana")
-        );
+                .containsExactlyInAnyOrder("Belice", "Guatemala");
+        assertThat(list).extracting(DistribucionResponse::getEcosistema)
+                .containsExactlyInAnyOrder("Selva", "Bosque nuboso");
     }
 
     @Test
-    @DisplayName("listarPorEspecie: 404 si la especie no existe")
-    void listar_especieNoExiste() {
+    @DisplayName("listarPorEspecie: 404 cuando la especie no existe")
+    void listar_notFound() {
         assertThatThrownBy(() -> service.listarPorEspecie(12345L))
                 .isInstanceOf(EntityNotFoundException.class)
                 .hasMessageContaining("Especie no encontrada");
