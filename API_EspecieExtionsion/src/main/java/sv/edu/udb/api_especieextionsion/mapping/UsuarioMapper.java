@@ -13,18 +13,21 @@ import sv.edu.udb.api_especieextionsion.repository.domain.Usuario;
 @Mapper(config = MapperConfig.class)
 public interface UsuarioMapper {
 
-    // Request -> Entity (id lo genera la DB)
+    // Request -> Entity (id lo genera la DB). Password se maneja aparte (service / register).
     @Mapping(target = "id", ignore = true)
+    @Mapping(target = "password", ignore = true) // <-- importante
     Usuario toEntity(UsuarioRequest dto);
 
-    // Entity -> Response
+    // Entity -> Response (no expone password, así que no hay nada que hacer)
     UsuarioResponse toDto(Usuario entity);
 
-    // Update parcial: ignora nulls y nunca pisa el id
+    // Update parcial sobre la entidad, ignorando nulls. Password no se toca aquí.
     @BeanMapping(nullValuePropertyMappingStrategy = NullValuePropertyMappingStrategy.IGNORE)
     @Mapping(target = "id", ignore = true)
+    @Mapping(target = "password", ignore = true) // <-- importante
     void updateEntity(@MappingTarget Usuario entity, UsuarioRequest dto);
 }
+
 
 
 
